@@ -1,0 +1,595 @@
+
+  Claude Code v2.1.296
+  Opus 5.5 · Claude Pro
+  ~/바탕화면
+
+
+❯ k8s를 설치하는데 kubespray를 사용하고 k8s 버전은 1.34.1를 사용해라 javis(controlplane이면서 deploy pod설치가능), javis2(192.167.122.137, workernode), cert-manager, metrics서버, prometus, grapana, metallb-system 를 192.168.122.180~230 l2 스위치 방식으로 설치하라, etcd가 설치 안하는거 같은데 반드시 설치하라.
+
+먼저 현재 환경부터 확인하겠습니다.
+
+  Ran 2 shell commands
+
+sudo에 비밀번호가 필요합니다. 기존 설치 흔적과 kubespray의 1.34.1 지원 여부를 확인합니다.
+
+  Ran 4 shell commands
+
+master 브랜치는 1.35 이상만 지원하므로 1.34.x를 공식 지원하는 v2.30.0 태그를 사용하겠습니다. 추가로 libvirt 네트워크와 방화벽도 확인합니다.
+
+  Ran 2 shell commands
+
+❯ 칼리코도 반드시 설치하라
+
+Calico도 CNI로 명시해서 설치하겠습니다. ansible stdin 문제는 리다이렉트로 우회합니다.
+
+  Ran 1 shell command
+
+Now the inventory and settings.
+
+  Ran 3 shell commands
+
+180~230 대역은 현재 비어 있습니다. 인벤토리와 설정 파일을 작성합니다.
+
+  Ran 2 shell commands
+
+호스트 jabis의 /usr/bin/python3가 3.10으로 바뀌어 있어 apt 모듈이 실패할 수 있습니다. 시스템 python3.14로 확인합니다.
+
+  Ran 3 shell commands
+
+준비는 끝났는데, 설치를 시작하기 전에 막힌 부분이 하나 있습니다. 두 노드 모두 sudo에 비밀번호가 필요해서 ansible이 root 권한을 얻을 수 없습니다. 아직 클러스터 설치는 실행하지
+
+준비 완료된 것
+
+- Kubespray 버전: ~/바탕화면/kubespray를 v2.30.0 로 바꿨습니다. master 브랜치는 1.35 이상만지원하고, v2.30.0이 1.34.x를 공식 지원합니다.
+- Ansible 환경: ~/kubespray-venv에 ansible-core 2두 ping과 정보 수집이 성공했습니다.
+- 인벤토리: inventory/mycluster/inventory.ini에 작성했습니다.
+
+┌─────────────────┬─────────────────┬─────────────────────────────────────────────┐
+│      노드       │       IP        │                │
+├─────────────────┼─────────────────┼─────────────────────────────────────────────┤
+│ jabis (javis)   │ 192.168.122.1   │ control-pla능) │
+├─────────────────┼─────────────────┼─────────────────────────────────────────────┤
+│ jabis2 (javis2) │ 192.168.122.137 │ worker         │
+└─────────────────┴─────────────────┴─────────────────────────────────────────────┘
+
+- 설정 내용:
+  - kube_version: 1.34.1
+  - kube_network_plugin: calico (Calico를 명시)
+  - etcd_deployment_type: kubeadm: etcd를 static ost는 etcd를 systemd 서비스로 설치하기 때문에kubectl get pod에 나오지 않았습니다. 그래서 etcd가 설치되지 않은 것처럼 보였을 것입니다. 이번에는 kube-system 네임스페이스에
+    etcd-jabis 파드로 나타납니다.
+  - cert-manager, metrics-server(insecure_tls), helm 활성화
+  - MetalLB는 L2 방식으로, IP 풀을 192.168.122.18 다. 이를 위해 kube_proxy_strict_arp: true도켰습니다.
+- Prometheus/Grafana: Kubespray에는 이 애드온이  면 helm으로 kube-prometheus-stack을 설치하겠습니다.
+
+확인이 필요한 점
+
+1. 호스트 이름: 실제 호스트 이름이 jabis, jabis2 avis, javis2로 바꿔야 하면 알려 주세요.
+2. jabis의 Python: /usr/bin/python3가 3.10으로 바뀌어 있습니다. apt 모듈이 동작하도록 두 노드 모두 python3.14를 지정했습니다.
+3. IP 충돌 가능성: 192.168.122.180~230은 지금 아 ibvirt default 네트워크의 DHCP 범위가 보통.2~.254여서, 나중에 새 VM이 이 대역의 IP를 받으면 충돌할 수 있습니다. 필요하면 virsh net-edit default로 DHCP 범위를 줄여
+   주세요.
+
+필요한 조치: sudo 권한
+
+별도 터미널에서 아래 명령을 실행해 비밀번호 없는
+echo "oracle1 ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/90-oracle1-nopasswd
+ssh -t 192.168.122.137 'echo "oracle1 ALL=(ALL) NOPAoers.d/90-oracle1-nopasswd'
+설치가 끝나면 이 파일을 지우면 됩니다. 실행한 뒤 알려 주시면 cluster.yml 설치부터 Prometheus/Grafana 설치와 검증까지 이어서
+진행하겠습니다.
+
+✻ Churned for 2m 7s · done 오후 3:53 · 1 shell, 1 m
+
+❯ sudo 설정했다 설치 진행해라
+
+  Ran 2 shell commands
+
+진행할 수 없었습니다. 두 노드 모두에서 아직 비밀 다. 그래서 설치는 시작하지 않았습니다.
+
+- 확인 결과: jabis와 jabis2 모두 sudo -n true를  hentication is required가 나옵니다.
+- 원인: 두 노드의 /etc/sudoers.d/에 README만 있고 90-oracle1-nopasswd 파일이 없습니다. 명령이 실패했거나 다른 방법으로 설정하신 것
+  같습니다.
+- 참고: 이 시스템의 sudo는 Ubuntu 26.04 기본인 sudo-rs 0.2.13입니다. /etc/sudoers.d 파일은 정상적으로 읽습니다.
+
+일반 터미널에서 아래 명령을 다시 실행해 주세요. 비밀번호를 물으면 입력하면 됩니다.
+
+# jabis (로컬)
+echo 'oracle1 ALL=(ALL) NOPASSWD:ALL' | sudo tee /et
+sudo chmod 0440 /etc/sudoers.d/90-oracle1-nopasswd
+sudo -k; sudo -n true && echo LOCAL_OK
+
+# jabis2
+ssh -t 192.168.122.137 "echo 'oracle1 ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/90-oracle1-nopasswd && sudo chmod 0440
+/etc/sudoers.d/90-oracle1-nopasswd && sudo -k && sud
+
+LOCAL_OK와 REMOTE_OK가 둘 다 나오면 알려 주세요.
+
+sudoers를 바꾸고 싶지 않다면 sudo 비밀번호만 담은 . 예를 들어 ~/.become_pass 파일을 만들고 권한을chmod 600으로 두면, ansible의 --become-password-file 옵션으로 이 파일을 읽어 설치합니다. 두 노드의 비밀번호가 같아야 합니다.
+
+✻ Crunched for 12s · done 오후 3:54 · 1 shell, 1 monitor still running
+
+❯ ssh-keygen 작업은 이미 내가 했다 확인 바람, sudo는  불편해도 사용하겠다
+
+  Ran 1 shell command
+
+SSH 키 설정은 문제없습니다.
+
+- jabis에 ~/.ssh/id_ed25519 키가 있습니다.
+- 이 공개키가 jabis2의 authorized_keys에 등록되어
+- ssh 192.168.122.137이 비밀번호 없이 접속됩니다(BatchMode). 앞에서 ansible ping도 성공했습니다.
+
+비밀번호 sudo를 그대로 쓰는 것도 괜찮습니다. 다만 저는 비밀번호를 대화형으로 입력할 수 없어서, ansible에 sudo 비밀번호를 건네줄
+방법이 하나 필요합니다. 둘 중 편한 쪽을 골라 주세
+
+방법 1: 비밀번호 파일 (추천)
+설치는 제가 계속 진행합니다. 일반 터미널에서 아래 명령을 실행해 주세요. 입력한 비밀번호는 화면과 쉘 기록에 남지 않습니다.
+read -rsp 'sudo password: ' P && printf '%s\n' "$600 ~/.become_pass && unset P; echo
+jabis와 jabis2의 oracle1 비밀번호가 같아야 합니다. 다르면 알려 주세요. 노드별로 나눠서 설정하겠습니다. 설치가 끝나면 rm
+~/.become_pass로 파일을 지우면 됩니다.
+
+방법 2: 터미널에서 직접 실행
+아래 명령을 직접 실행하고 BECOME password: 프롬프트에 비밀번호를 입력하면 됩니다. 설치에 20~40분쯤 걸립니다. 이 경우 클러스터
+설치가 끝난 뒤 Prometheus/Grafana 설치와 검증은
+cd ~/바탕화면/kubespray && ~/kubespray-venv/bin/ansible-playbook -i inventory/mycluster/inventory.ini cluster.yml -b -K
+
+방법 1로 파일을 만드셨으면 "완료"라고만 알려 주세요. 바로 cluster.yml 설치를 시작합니다.
+
+✻ Crunched for 13s · done 오후 3:55 · 1 shell, 1 monitor still running
+
+❯ 비밀번호 같아요
+
+  Listed 1 directory
+
+비밀번호가 같다는 것은 확인했습니다. 다만 ~/.become_pass 파일이 아직 없어서 설치를 시작하지 못했습니다.
+
+일반 터미널에서 아래 한 줄을 실행해 주세요. sudo password:가 나오면 비밀번호를 입력하고 Enter를 누르면 됩니다. 입력한 내용은
+화면에 보이지 않습니다.
+
+read -rsp 'sudo password: ' P && printf '%s\n' "$600 ~/.become_pass && unset P; echo
+
+실행한 뒤 "완료"라고 알려 주시면, 파일이 생겼는지확인하고 바로 설치를 시작하겠습니다.
+
+비밀번호를 이 대화창에 직접 입력하지는 마세요. 대
+
+✻ Sautéed for 5s · done 오후 3:56 · 1 shell, 1 moni
+
+❯ 설치가 끝났나요
+
+  Ran 1 shell command
+
+아니요, 설치는 아직 시작하지 않았습니다. 지금 확
+
+- sudo 비밀번호 파일 ~/.become_pass가 없습니다.
+- /etc/kubernetes 폴더가 없고, kubelet도 꺼져 있습니다(inactive).
+- 실행 중인 ansible-playbook 프로세스도 없습니다.
+
+두 노드 모두 sudo에 비밀번호가 필요한데, 저는 비  일이 있어야 설치를 시작할 수 있습니다. 이 파일만만들어 주시면 나머지는 모두 준비되어 있습니다.
+
+일반 터미널에서 아래 한 줄을 실행하고, sudo password:가 나오면 비밀번호를 입력해 주세요.
+
+read -rsp 'sudo password: ' P && printf '%s\n' "$P" > ~/.become_pass && chmod 600 ~/.become_pass && unset P; echo
+
+"완료"라고 알려 주시면 바로 아래 순서로 진행하겠습니다.
+1. 두 노드에서 sudo가 되는지 확인
+2. cluster.yml 실행: k8s 1.34.1, etcd, Calico, cert-manager, metrics-server, MetalLB (20~40분)
+3. Prometheus와 Grafana 설치 (helm kube-prometheu
+4. 전체 동작 검증 후 결과 보고
+
+직접 실행하는 편이 낫다면 터미널에서 아래 명령을 실행하고 비밀번호를 입력하셔도 됩니다. 끝난 뒤 알려 주시면 Prometheus/Grafana
+설치와 검증은 제가 이어서 하겠습니다.
+cd ~/바탕화면/kubespray && ~/kubespray-venv/bin/ansible-playbook -i inventory/mycluster/inventory.ini cluster.yml -b -K
+
+✻ Worked for 8s · done 오후 3:56 · 1 shell, 1 monitor still running
+
+❯ 설치하고 있어요
+
+  Ran 1 shell command
+
+터미널에서 실행 중인 cluster.yml(-b -K)이 아직 초기 단계임을 확인했습니다 — /etc/kubernetes는 생성되지 않았고 containerd,
+kubelet도 아직 시작 전입니다. 플레이북 완료 시점
+
+  Ran 1 shell command
+
+플레이북이 도는 동안 Prometheus/Grafana 설치 설정
+
+  Ran 1 shell command
+
+설치 끝을 기다리는 중입니다. 백그라운드에서 지켜 바로 이어서 진행하겠습니다.
+
+지금 진행 중인 것
+- 터미널에서 직접 실행하신 cluster.yml이 아직 도는 중입니다. 20~40분쯤 걸리고 아직 결과는 없습니다.
+- Prometheus/Grafana 설치 설정은 미리 만들어 두었onitoring/kube-prometheus-stack-values.yaml
+  - Grafana와 Prometheus 서비스는 LoadBalancer로 띄워 MetalLB 대역(192.168.122.180~230)에서 IP를 받습니다.
+  - controller-manager, scheduler, etcd 수집은 꺼는 이 셋이 127.0.0.1에서만 열려 있어 수집이실패하고 경고만 계속 뜨기 때문입니다.
+  - Grafana 관리자 비밀번호는 설치할 때 무작위로
+
+플레이북이 끝나면 할 일
+1. 클러스터 확인: 노드 2대 Ready, etcd-jabis 파드, Calico, cert-manager, metrics-server(kubectl top), MetalLB 풀
+2. helm으로 kube-prometheus-stack 설치
+3. Grafana와 Prometheus에 할당된 외부 IP와 접속 정보 정리
+
+터미널에 PLAY RECAP이 나오면 failed= 값을 봐 주세요. 0이 아니면 그 위의 오류 메시지를 붙여 주시면 원인을 함께 찾겠습니다.
+
+✻ Brewed for 22s · done 오후 3:58 · 1 shell, 1 monitor still running
+
+❯ 네
+
+  Ran 2 shell commands
+
+아직 진행 중이고, 시작한 지 1분 40초쯤 된 초기 단계입니다. 지금은 두 노드(jabis는 sudo, jabis2는 ssh)에 첫 작업을 보내는 중이고,
+containerd·kubelet·/etc/kubernetes는 아직 없습니
+
+20~40분쯤 걸릴 것으로 보입니다. 백그라운드에서 지 스터를 확인하고 Prometheus/Grafana 설치로넘어가겠습니다.
+
+한 가지 확인 부탁드립니다. 터미널에 BECOME password: 프롬프트가 떠 있으면 비밀번호를 입력해야 진행됩니다. 이미 입력하셨으면
+그대로 두시면 됩니다.
+
+✻ Cooked for 9s · done 오후 3:59 · 1 shell, 1 monit
+
+※ recap: Kubespray로 k8s 1.34.1 클러스터와 etcd, Caerver, MetalLB, Prometheus/Grafana를 설치하는중이고, 지금은 터미널에서 실행하신 `cluster.yml`이 진행 중입니다. 끝나면 클러스터를 확인한 뒤 helm으로 Prometheus/Grafana를
+  설치하겠습니다. (disable recaps in /config)
+
+❯ ASK [bootstrap_os : Fetch /etc/os-release]***********************************************************************************************************************
+  fatal: [jabis]: FAILED! => {"msg": "privilege outpassword prompt:\n[sudo: [sudo via ansible,key=vlxnmlqnfuqsjahxhquobncixbyhlyjc] password:] 비밀번호: \nsudo: timed out\n"}
+  fatal: [jabis2]: FAILED! => {"changed": false, "m"rc": 1, "stderr": "Shared connection to192.168.122.137 closed.\r\n", "stderr_lines": ["Shared connection to 192.168.122.137 closed."], "stdout": "[sudo: [sudo via ansible, key=iwoyaacdzejypugfvroznmvascdkbfhn] patimed out\r\n", "stdout_lines": ["[sudo: [sudo via ansible, key=iwoyaacdzejypugfvroznmvascdkbfhn] password:] Password: ", "sudo: timed out"]}
+
+  PLAY RECAP *********************************************************************************************************************
+  ***********************************
+  jabis                      : ok=14   changed=0    unreachable=0    failed=1    skipped=15   rescued=0    ignored=0
+  jabis2                     : ok=2    changed=0    skipped=10   rescued=0    ignored=0
+
+  일요일 11 10월 2026  16:02:43 +0900 (0:05:00.143)*****
+
+sudo 인증이 실패했습니다. Ubuntu 26.04 기본 sudo 롬프트 뒤에 Password:를 덧붙여 출력해서, ansible이비밀번호를 물어보는 시점을 알아채지 못했습니다. 그래서 비밀번호를 보내지 못한 채 5분이 지나 타임아웃이 났습니다. 기존
+sudo(sudo.ws)가 있는지 확인합니다.
+
+  Ran 1 shell command
+
+❯ 에러나고 실패하네요
+
+Both nodes have the original sudo, sudo.ws. I'll
+
+  Ran 1 shell command
+
+설치가 실패한 원인을 찾았고 설정을 고쳤습니다. 다
+
+원인
+Ubuntu 26.04의 기본 sudo는 sudo-rs입니다. 이 sudo는 ansible이 넘긴 비밀번호 프롬프트를 [sudo: ... password:] 비밀번호:처럼 바꿔서
+출력합니다. 그래서 ansible이 비밀번호를 물어보는 를 보내지 못했습니다. 5분 뒤 sudo: timed out이났고, 두 노드 모두 같은 이유로 실패했습니다. 비밀번호를 잘못 입력하신 것은 아닙니다.
+
+수정한 것
+두 노드 모두 기존 sudo(/usr/bin/sudo.ws)가 함께   것을 쓰도록inventory/mycluster/group_vars/all/become.yml에 ansible_become_exe: /usr/bin/sudo.ws를 넣었습니다. 두 노드 모두 이 설정이
+적용되는 것을 확인했습니다. 시스템의 sudo 설정은
+
+다시 실행
+터미널에서 같은 명령을 실행하고 BECOME password:에 비밀번호를 입력해 주세요.
+cd ~/바탕화면/kubespray && ~/kubespray-venv/bin/amycluster/inventory.ini cluster.yml -b -K
+
+처음 1~2분 안에 bootstrap_os : Fetch /etc/os-rele결된 것입니다. 지난번에 여기서 5분 동안 멈췄습니다. 실행하신 뒤 알려 주시면 끝날 때까지 지켜보고, 이어서 Prometheus/Grafana를 설치하겠습니다.
+
+✻ Crunched for 20s · done 오후 4:03 · 1 shell, 1 monitor still running
+
+❯ kubectl get nodes
+  Traceback (most recent call last):
+    File "/usr/lib/command-not-found", line 28, in <module>
+      from CommandNotFound import CommandNotFound
+    File "/usr/lib/python3/dist-packages/CommandNotFound/CommandNotFound.py", line 19, in <module>
+      from CommandNotFound.db.db import SqliteDatab
+    File "/usr/lib/python3/dist-packages/CommandNotFound/db/db.py", line 5, in <module>
+      import apt_pkg
+  ModuleNotFoundError: No module named 'apt_pkg
+
+  Ran 1 shell command
+
+kubectl 명령이 없는 이유는 쿠버네티스가 아직 설치되지 않았기 때문입니다. 확인해 보니 다시 실행하신 설치도 끝까지 진행되지
+않았습니다.
+
+지금 상태
+- 실행 중인 ansible-playbook 프로세스가 없습니다.
+- /etc/kubernetes, ~/.kube, /usr/local/bin/kubectbelet도 꺼져 있습니다.
+- 그래서 재실행이 시작 직후에 실패했거나, 아직 실행되지 않은 것으로 보입니다.
+
+apt_pkg 오류에 대해
+이 오류는 설치와는 관계없습니다. 없는 명령을 입력 주는 command-not-found가 실행되는데, 이게 깨진것입니다. 이 PC의 /usr/bin/python3가 alternatives로 3.10을 가리키게 바뀌어 있어서 시스템 모듈 apt_pkg를 찾지 못합니다. 원래대로
+돌리려면 아래 명령을 실행하면 됩니다. 클러스터 설  고칠 필요는 없습니다.
+sudo update-alternatives --config python3   # python3.14 선택
+
+다음 단계
+1. 터미널에서 다시 실행하고 BECOME password:에 비
+cd ~/바탕화면/kubespray && ~/kubespray-venv/bin/ansible-playbook -i inventory/mycluster/inventory.ini cluster.yml -b -K
+2. 실패하면 마지막 fatal: 줄부터 PLAY RECAP까지
+3. 성공해서 PLAY RECAP에 failed=0이 나오면, kubectl은 /usr/local/bin/kubectl에 설치됩니다. 일반 사용자 kubeconfig는 제가 설정해
+   드리겠습니다.
+
+✻ Brewed for 12s · done 오후 4:04 · 1 shell, 1 moni
+
+❯ 이렇게 나와요
+
+메시지에 출력 내용이 들어 있지 않습니다. "이렇게 주신 화면이 빠진 것 같습니다.
+
+터미널에서 아래 부분을 복사해서 다시 붙여 주세요.
+- 마지막 fatal: 또는 FAILED! 줄부터 PLAY RECAP까지의 내용
+- 오류 없이 끝났다면 맨 끝의 PLAY RECAP 부분 (ok=
+
+출력이 너무 길면 화면 아래쪽 30줄 정도만 보내 주
+
+✻ Cooked for 3s · done 오후 4:04 · 1 shell, 1 monit
+
+❯  kubectl get nodes
+  Traceback (most recent call last):
+    File "/usr/lib/command-not-found", line 28, in
+      from CommandNotFound import CommandNotFound
+    File "/usr/lib/python3/dist-packages/CommandNotne 19, in <module>
+      from CommandNotFound.db.db import SqliteDatabase
+    File "/usr/lib/python3/dist-packages/CommandNotmodule>
+      import apt_pkg
+  ModuleNotFoundError: No module named 'apt_pkg'
+
+  Ran 1 shell command
+
+이번 출력도 앞과 같은 kubectl 오류입니다. 설치 명. 지금도 실행 중인 설치 프로세스가 없고,/etc/kubernetes도 없습니다.
+
+kubectl get nodes는 설치가 끝나야 쓸 수 있는 명령이라 지금은 오류가 나는 게 정상입니다. 설치부터 해야 하는데, 아래 두 방법 중
+하나를 골라 주세요.
+
+방법 A: 제가 설치까지 모두 진행 (추천)
+
+터미널에 아래 한 줄을 그대로 붙여 넣고 Enter를 누면 비밀번호를 입력합니다. 입력한 글자는 화면에보이지 않습니다.
+read -rsp 'sudo password: ' P && printf '%s\n' "$600 ~/.become_pass && unset P; echo
+그다음 여기에 **"완료"**라고만 적어 주세요. 설치, Prometheus/Grafana 설치, 검증까지 제가 모두 진행하고 결과를 알려 드리겠습니다.
+
+방법 B: 직접 설치 실행
+
+터미널에 아래 명령을 붙여 넣고, BECOME password:가 나오면 비밀번호를 입력하세요.
+cd ~/바탕화면/kubespray && ~/kubespray-venv/bin/amycluster/inventory.ini cluster.yml -b -K
+20~40분 걸립니다. 화면이 멈추고 마지막에 PLAY RECAP이 나오면, 그 부분을 복사해서 여기에 붙여 주세요.
+
+✻ Brewed for 11s · done 오후 4:05 · 1 shell, 1 monitor still running
+
+❯ A 방법실행
+
+  Ran 1 shell command
+
+~/.become_pass 파일이 아직 없어서 설치를 시작하지 못했습니다. 명령이 실행되지 않았거나, 다른 곳에서 실행된 것 같습니다.
+
+이 명령은 이 Claude 대화창이 아니라 별도의 터미널 창에서 실행해야 합니다.
+
+1. Ctrl+Alt+T를 눌러 새 터미널 창을 엽니다.
+2. 아래 한 줄을 붙여 넣고 Enter를 누릅니다.
+read -rsp 'sudo password: ' P && printf '%s\n' "$P" > ~/.become_pass && chmod 600 ~/.become_pass && unset P; echo
+3. sudo password:가 나오면 비밀번호를 입력하고 En 화면에 보이지 않는 게 정상입니다.
+4. 같은 터미널에서 ls -l ~/.become_pass를 실행해 아래처럼 나오는지 확인합니다.
+-rw------- 1 oracle1 oracle1 ... /home/oracle1/.become_pas
+
+이렇게 나오면 여기에 **"완료"**라고 적어 주세요.
+
+✻ Crunched for 9s · done 오후 4:05 · 1 shell, 1 mon
+
+❯ 완료
+
+  Ran 1 shell command
+
+sudo가 두 노드 모두 정상 동작합니다. 설치를 시작
+
+  Ran 1 shell command
+
+● Monitor(kubespray install failures/recap)
+Monitor started · task b3o8rsfx9 · timeout 1800s
+
+설치가 백그라운드에서 진행 중입니다. 로그는 ~/kubespray-install.log에 저장되고, 오류가 나거나 설치가 끝나면 알림을 받도록 설정해
+두었습니다.
+
+  Ran 1 shell command
+
+지난번에 멈췄던 bootstrap_os : Fetch /etc/os-rele 계로 넘어갔습니다. 이제 sudo 문제는 해결됐습니다.설치가 끝나거나 오류가 나면 알려 드리겠습니다.
+
+✻ Brewed for 21s · done 오후 4:07 · 1 shell, 1 monitor still running
+
+❯ 내가 수동으로 kubespray 관련파일 받은것이 문제가 되나요
+
+  Ran 2 shell commands
+
+아니요, 문제가 되지 않습니다. 확인한 내용은 이렇습니다.
+
+- kubespray 소스(~/바탕화면/kubespray): 직접 받으신 git 저장소를 그대로 쓰고 있습니다. 수정된 파일이 없는 깨끗한 상태였고, 제가
+  여기서 1.34.x를 지원하는 v2.30.0 태그로 k8s-1.3렇게 수동으로 받아 쓰는 것이 원래 정상적인사용법입니다.
+- 설치 파일(/tmp/releases): containerd, runc, kubins 같은 파일은 지금 돌고 있는 설치가 16:08~16:09에 받은 것입니다. 일부 파일 시각이 17:53으로 보이는 것은 압축 안에 들어 있던 원래 시각이 그대로 남은 것입니다. 이전에 받아 둔
+  파일과 섞이지 않았습니다.
+- 다운로드 폴더(~/다운로드): Ubuntu ISO와 thunderbird 임시 파일만 있고, 쿠버네티스 관련 파일은 없습니다.
+- kubespray는 받는 파일마다 sha256 체크섬을 검사 파일이 있더라도 그대로 쓰지 않고 오류를 냅니다.
+
+혹시 제가 확인한 위치 말고 다른 곳(다른 폴더나 ja 으면 경로를 알려 주세요. 따로 확인하겠습니다.
+
+설치는 지금 download 단계(구성요소 다운로드)까지 류는 없습니다.
+
+✻ Cogitated for 14s · done 오후 4:09 · 1 shell, 1 m
+
+❯ 진행중인가요
+
+  Ran 1 shell command
+
+네, 오류 없이 잘 진행되고 있습니다.
+                                                                                                                               - 상태: 실행 중이고, 시작한 지 약 4분 30초 지났습
+- 현재 단계: download 단계에서 컨테이너 이미지를 받는 중입니다(Calico, CoreDNS, etcd 등). 지금까지 433개 작업을 마쳤습니다.    - 오류: 없습니다(fatal 0건).
+                                                                                                                               다운로드가 끝나면 etcd → 컨트롤플레인(kubeadm ini 드온 순서로 진행됩니다. 전체 20~40분쯤 걸릴 것으로 보입니다. 오류가 나거나 끝나면 바로 알려 드리겠습니다.                                                                         
+✻ Cooked for 6s · done 오후 4:12 · 1 shell, 1 monitor still running                                                              
+● Monitor event: fatal: [jabis]: FAILED! => {"changed": false, "cmd": ["/usr/local/bin/calicoctl.sh", "get", "felixconfig", "defa
+  Searched for 1 pattern                                                                                                         
+● Monitor event: fatal: [jabis]: FAILED! => {"changed": false, "cmd": ["/usr/local/bin/calicoctl.sh", "get", "ippool", "default-p
+Calico 단계에서 fatal이 두 번 찍혔는데, 실제 오류가 아닙니다. 처음 설치할 때 Calico 설정(FelixConfiguration, IPPool)이 이미    있는지 먼저 조회하는데, 아직 없으니 "없음" 결과가 이북은 이 결과를 ...ignoring 처리하고 바로 새로만듭니다.                                                                                                                      
+Calico 단계까지 왔으니 그 앞의 큰 단계는 모두 지났습니다. 다운로드, etcd, 컨트롤플레인 초기화가 끝났고, 지금은 Calico 네트워크 풀을 설정하는 중입니다. 계속 지켜보겠습니다.
+
+✻ Crunched for 7s · done 오후 4:13 · 1 shell, 1 mon
+
+● Monitor event: fatal: [jabis]: FAILED! => {"changal/bin/calicoctl.sh", "get", "bgpconfig", "default…
+
+Calico의 BGPConfiguration도 아직 없어서 조회 단계 두 건과 같은 경우로, 플레이북이 무시하고 진행하는
+Calico의 BGPConfiguration도 아직 없어서 조회 단계 두 건과 같은 경우로, 플레이북이 무시하고 진행하는정상 동작입니다.
+
+✻ Churned for 2s · done 오후 4:14 · 1 shell, 1 monitor still running
+
+● Monitor event: fatal: [jabis]: FAILED! => {"changed": true, "cmd": ["/usr/local/bin/kubectl", "--kubeconfig", "/etc/kubernetes/a…
+
+이번 fatal도 무시해도 되는 메시지입니다. cert-manager를 설치하기 전에 기존 네임스페이스를 지우려 했는데, 처음 설치라 지울
+네임스페이스가 없어 NotFound가 났습니다. 이 결과
+
+설치는 애드온 단계(cert-manager)까지 진행됐습니다
+
+✻ Worked for 2s · done 오후 4:14 · 1 shell, 1 monit
+
+● Background command "Run kubespray cluster.yml insde 0)
+
+  Searched for 1 pattern
+
+● Monitor event: PLAY RECAP **************************************** · kubespray install failures/rec…
+                                                                                                                                 tallation succeeded (failed=0). Now setting up cluster.
+                                                                                                                                 h(mkdir -p ~/.kube && sudo.ws -S cp /etc/kuberig < ~/.become_pass 2>/dev/null && sudo.ws -S chown oracle1:oracle1 ~/.kube/config < ~/.become_pass 2>/dev/null; chmod 600 ~/.kube/config; kubectl version 2>&1 | tail -2; kubectl get   es -o wide; kubectl get pods -A -o wide | awk lumn -t)
+Kustomize Version: v5.7.1                                                                                                   Server Version: v1.34.1
+NAME     STATUS   ROLES           AGE     VERSION   INTERNAL-IP       EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
+jabis    Ready    control-plane   2m40s   v1.34.1   192.168.122.1     <none>        Ubuntu 26.04.1 LTS   7.0.0-38-generic   containerd://2.2.1
+jabis2   Ready    <none>          116s    v1.34.1   192.168.122.137   <none>        Ubuntu 26.04.1 LTS   7.0.0-38-generic
+containerd://2.2.1
+NAMESPACE       NAME                                      READY  STATUS            NODE
+cert-manager    cert-manager-66cc979b8f-qhgcm         jabis
+cert-manager    cert-manager-cainjector-7686c595bd-nvg9c  1/1    Running           jabis
+cert-manager    cert-manager-webhook-868f5bbdf        jabis
+kube-system     calico-kube-controllers-7b7cd6dc87-ft7bk  1/1    Running           jabis2
+kube-system     calico-node-fjwg9                     jabis2
+kube-system     calico-node-k2lhz                         1/1    Running           jabis
+kube-system     coredns-64b5cc5cbc-fpplb      ackOff  85s
+kube-system     coredns-64b5cc5cbc-gtf4c                  0/1    CrashLoopBackOff  88s
+kube-system     dns-autoscaler-5594cbb9c4-bv7b        jabis
+kube-system     etcd-jabis                                1/1    Running           jabis
+kube-system     kube-apiserver-jabis                  jabis
+kube-system     kube-controller-manager-jabis             1/1    Running           jabis
+kube-system     kube-proxy-jg6xt                      jabis
+kube-system     kube-proxy-mncn9                          1/1    Running           jabis2
+kube-system     kube-scheduler-jabis                  jabis
+kube-system     metrics-server-7c987796d6-dvvln           1/1    Running           jabis
+kube-system     nginx-proxy-jabis2                    jabis2
+kube-system     nodelocaldns-2n82d                        1/1    Running           jabis
+kube-system     nodelocaldns-t2flc                    jabis2
+metallb-system  controller-7dc8d8dccd-5wvzm               1/1    Running           70s
+metallb-system  speaker-47cdf                         jabis2
+metallb-system  speaker-tlq6p                             1/1    Running           jabis
+
+
+etcd(etcd-jabis)를 포함해 대부분 정상인데, CoreDN다. 로그를 확인합니다.
+
+  Ran 4 shell commands
+
+kubespray v2.30에 Ubuntu 26.04 설정 파일이 없어 k (127.0.0.53)을 그대로 사용했고, 이로 인해CoreDNS가 자기 자신에게 질의를 넘기는 루프가 발생한 것을 확인했습니다. 인벤토리에 Ubuntu 22/24용 설정과 업스트림 DNS를 지정해
+다시 적용하겠습니다.
+
+  Ran 1 shell command
+
+다시 적용하는 동안 Prometheus/Grafana 설치를 준비
+
+  Ran 1 shell command
+
+MetalLB L2 풀(192.168.122.180-230)도 정상 등록되   끝나면 알림이 올 것입니다.
+
+✻ Worked for 46s · done 오후 4:16 · 1 shell, 1 moni
+
+❯ calico 에러는 무시하세요. 나중에 dns서버 resolv.c
+
+알겠습니다. Calico 단계에서 찍히는 fatal 메시지는
+
+다만 이미 재적용을 시작했고 중간에 멈추지 않고 그 번 재적용 내용은 이렇습니다.
+
+- kubelet이 /run/systemd/resolve/resolv.conf를 쓰solv.conf(127.0.0.53)를 써서 CoreDNS 루프가생깁니다.
+- CoreDNS의 외부 질의 업스트림을 jabis 호스트의 D36.130으로 지정했습니다.
+
+나중에 8.8.8.8로 바꾸실 계획이면, 인벤토리의 upst바꿔 두는 게 좋습니다. 그래야 kubespray를 다시돌려도 설정이 되돌아가지 않습니다. 원하시면 이번 재적용이 끝난 뒤 바로 8.8.8.8로 바꿔 드리겠습니다.
+
+재적용이 끝나면 CoreDNS를 확인하고 Prometheus/Grafana 설치로 넘어가겠습니다.
+
+✻ Cooked for 7s · done 오후 4:17 · 1 shell, 1 monitor still running
+
+● Background command "Fix DNS settings and rerun kubespray" completed (exit code 0)
+
+  Ran 1 shell command
+
+DNS is fixed (both in-cluster and external lookups work). Now installing Prometheus and Grafana.
+
+  Ran 1 shell command
+
+Final verification across the cluster.
+
+  Ran 1 shell command
+
+거의 끝났습니다. 다만 jabis2의 kubectl top 값이 <unknown>이고, Prometheus 수집 대상 일부가 down입니다. 확인합니다.
+
+  Ran 2 shell commands
+
+jabis2에서 ufw 방화벽이 켜져 있습니다. 규칙을 확인합니다.
+
+  Ran 1 shell command
+
+ufw는 두 노드 모두 꺼져 있는데, jabis 호스트에서는 jabis2 kubelet에 접속되지만(401) jabis의 파드에서만 거부되는 걸 확인했습니다.
+libvirt NAT 네트워크의 FORWARD 거부 규칙을 의심되
+
+  Ran 1 shell command
+
+원인을 찾았습니다—libvirt의 LIBVIRT_FWI 체인이 vi  거부해서 jabis의 파드가 jabis2 노드 IP로 접속할때 막히고 있었습니다. 파드 대역(10.233.64.0/18)을 허용하는 규칙을 추가하고, 재부팅 후에도 유지되도록 libvirt 훅으로
+등록하겠습니다.
+
+  Ran 1 shell command
+
+재부팅 후에도 유지되는 훅 등록은 권한상 거부되었   iptables 규칙만 적용해 보겠습니다.
+
+  Ran 1 shell command
+
+런타임 규칙은 적용됐습니다. 이제 kube-proxy 메트  제를 고치기 위해 설정을 수정하고, kubespray 재실행 시에도 유지되도록 인벤토리에도 동일한 값을 반영하겠습니다.
+
+  Ran 1 shell command
+
+설치를 마쳤습니다. 노드 두 대 모두 Ready이고, 요청하신 구성요소가 전부 Running입니다. 다만 jabis에 넣은 iptables 규칙 하나는
+재부팅하면 사라지므로 직접 영구 등록하셔야 합니다
+
+설치 결과
+
+┌────────────────┬─────────────────────────────────────────────┐
+│      항목      │                                   상태                                   │
+├────────────────┼─────────────────────────────────────────────┤
+│ Kubernetes     │ v1.34.1: jabis(control-plane, 파드 배포 가능), jabis2(worker) 모두 Ready │
+├────────────────┼─────────────────────────────────────────────┤
+│ etcd           │ etcd-jabis static pod로 Running. kube-system 네임스페이스에서 보입니다   │
+├────────────────┼─────────────────────────────────────────────┤
+│ Calico         │ calico-node 2개, calico-kube-controllers Running                         │
+├────────────────┼─────────────────────────────────────────────┤
+│ cert-manager   │ controller, cainjector, webhook Running                                  │
+├────────────────┼─────────────────────────────────────────────┤
+│ metrics-server │ kubectl top nodes에 두 노드 모두 값이 나옵니다                           │
+├────────────────┼─────────────────────────────────────────────┤
+│ MetalLB (L2)   │ 풀 192.168.122.180-230 등록, controller와 speaker 2개 Running            │
+├────────────────┼─────────────────────────────────────────────┤
+│ Prometheus     │ http://192.168.122.180:9090 (ready 확인, 수집 대상 20개 모두 up)         │
+├────────────────┼─────────────────────────────────────────────┤
+│ Grafana        │ http://192.168.122.181 (jabis와 jabis2 양쪽에서 접속됨)                  │
+└────────────────┴─────────────────────────────────────────────┘
+
+Grafana 로그인 ID는 admin입니다. 비밀번호는 무작  인할 수 있습니다.
+kubectl get secret -n monitoring kube-prometheus-stack-grafana -o jsonpath='{.data.admin-password}' | base64 -d; echo
+
+설치 중에 고친 문제
+
+1. sudo 타임아웃: Ubuntu 26.04 기본 sudo인 sudo-rs가 ansible의 비밀번호 프롬프트를 바꿔 출력해서 비밀번호가 전달되지 않았습니다.
+   ansible이 /usr/bin/sudo.ws를 쓰도록 바꿨습니다
+2. CoreDNS가 계속 재시작(CrashLoop): kubespray v2.30에 Ubuntu 26.04용 설정이 없어 kubelet이 127.0.0.53을 DNS로 썼고, 그 결과 DNS
+   질의가 루프에 빠졌습니다. kube_resolv_conf와 u  해결했습니다. 클러스터 내부 DNS와 외부 DNS 조회모두 확인했습니다.
+3. jabis의 파드에서 jabis2 노드 IP로 접속 불가: l 고 있었습니다. 파드 대역(10.233.64.0/18)을허용하는 iptables 규칙을 추가했고, 그 뒤 metrics-server와 Prometheus 수집이 정상이 됐습니다.
+4. kube-proxy 메트릭: 127.0.0.1에만 열려 있어 Pro. 0.0.0.0으로 바꾸고, kubespray를 다시 돌려도유지되도록 인벤토리에도 넣었습니다.
+
+직접 처리하셔야 할 것
+
+- iptables 규칙 영구 등록: 3번 규칙은 재부팅하거나 libvirt 네트워크를 다시 시작하면 사라집니다. 제가 libvirt 훅으로 영구 등록하려
+  했는데, 자동 권한 검사에서 거부됐습니다. 영구  irt/hooks/network 파일을 만들고 실행 권한(755)을주세요. 내용은 libvirt default 네트워크가 시작될 때 아래 명령을 실행하는 스크립트입니다. 원하시면 이 작업을 허용해 주세요. 제가
+  등록하겠습니다.
+iptables -I LIBVIRT_FWI 1 -s 10.233.64.0/18 -o virbr0 -j ACCEPT
+- 비밀번호 파일 삭제: 작업이 다 끝나면 rm ~/.beco
+- DNS를 8.8.8.8로 바꿀 경우: 인벤토리의 upstream_dns_servers도 8.8.8.8로 바꿔 두세요. 그래야 kubespray를 다시 돌려도 이전 값으로
+  되돌아가지 않습니다.
+
+참고
+
+- 노드 이름은 실제 hostname인 jabis, jabis2를 그
+- 설정 파일은 ~/바탕화면/kubespray/inventory/mycluster/에 있습니다(k8s-1.34.1 브랜치). 설치 로그는 ~/kubespray-install.log와 ~/kubespray-install-2.log입니다.

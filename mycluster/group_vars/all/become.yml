@@ -1,0 +1,3 @@
+# Ubuntu 26.04 기본 sudo-rs 는 ansible 의 비밀번호 프롬프트를 변형해 -K 가 타임아웃됨
+# → 기존 sudo(sudo.ws) 사용
+ansible_become_exe: /usr/bin/sudo.ws

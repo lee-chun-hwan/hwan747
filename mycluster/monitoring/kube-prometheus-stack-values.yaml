@@ -1,0 +1,27 @@
+# helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#   -n monitoring --create-namespace -f kube-prometheus-stack-values.yaml
+grafana:
+  service:
+    type: LoadBalancer        # MetalLB 192.168.122.180~230 에서 IP 할당
+  # 관리자 비밀번호는 secret kube-prometheus-stack-grafana 에 자동 생성
+prometheus:
+  service:
+    type: LoadBalancer
+  prometheusSpec:
+    retention: 7d
+    # 다른 네임스페이스의 ServiceMonitor/PodMonitor 도 수집
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+alertmanager:
+  service:
+    type: ClusterIP
+# kubeadm static pod 는 127.0.0.1 바인딩이라 수집 불가 → 경고 방지
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: true

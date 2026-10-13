@@ -1,0 +1,12 @@
+# 대용량/외부 배포물
+*.deb
+kubespray/
+
+# 비밀정보 (클러스터 인증서/키)
+mycluster/credentials/
+mycluster/artifacts/
+*.creds
+admin.conf
+
+# 공인 IP 포함 (공개 금지)
+04-open-webui-https*.sh
